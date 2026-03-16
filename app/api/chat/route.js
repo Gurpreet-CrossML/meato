@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
  */
 export async function POST(request) {
   try {
-    const { query } = await request.json();
+    const { query, id } = await request.json();
 
     if (!query || typeof query !== "string" || !query.trim()) {
       return NextResponse.json({ error: "query is required" }, { status: 400 });
@@ -31,7 +31,8 @@ export async function POST(request) {
       upstream = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query.trim() }),
+        body: JSON.stringify({ query: query.trim(), id }),
+
         signal: controller.signal,
       });
     } catch (fetchErr) {
@@ -62,13 +63,10 @@ export async function POST(request) {
     // Read as text first — n8n can return an empty body with HTTP 200
     const rawText = await upstream.text();
     if (!rawText || !rawText.trim()) {
-      console.error("[chat/route] upstream returned an empty body");
-      return NextResponse.json(
-        {
-          error: "The AI service returned an empty response. Please try again.",
-        },
-        { status: 502 },
-      );
+      // n8n occasionally returns an empty body on webhook test runs;
+      // treat it as an empty assistant message instead of a hard error.
+      console.warn("[chat/route] upstream returned an empty body — treating as empty reply");
+      return NextResponse.json({ message: "", isTicketRequired: false, userNotification: "" });
     }
 
     let data;

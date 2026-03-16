@@ -26,7 +26,11 @@ export default function ChatInput() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={isLoading ? "Waiting for response…" : "Ask about cuts or recipes..."}
+            placeholder={
+              isLoading
+                ? "Waiting for response…"
+                : "Ask about cuts or recipes..."
+            }
             disabled={isLoading}
             className="w-full pl-4 pr-10 py-3 rounded-full text-sm outline-none transition-all
                      glass border border-border focus:border-[#E86A33] dark:focus:border-[#FF7A3C]
@@ -84,10 +88,12 @@ export default function ChatInput() {
             transition={{ duration: 0.2 }}
             className="text-xs text-muted-foreground mt-1.5 pl-2 flex items-center gap-1"
           >
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E86A33] animate-bounce [animation-delay:0ms]" />
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E86A33] animate-bounce [animation-delay:150ms]" />
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E86A33] animate-bounce [animation-delay:300ms]" />
-            <span className="ml-1">Meato is thinking…</span>
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E86A33] dark:bg-[#FF7A3C] animate-bounce [animation-delay:0ms]" />
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E86A33] dark:bg-[#FF7A3C] animate-bounce [animation-delay:150ms]" />
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E86A33] dark:bg-[#FF7A3C] animate-bounce [animation-delay:300ms]" />
+            <span className="ml-1 text-stone-700 dark:text-stone-300">
+              Meato is thinking…
+            </span>
           </motion.p>
         )}
       </AnimatePresence>

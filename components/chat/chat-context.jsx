@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import {
   CHAT_API_ROUTE,
   CHAT_STORAGE_KEY,
@@ -16,6 +22,27 @@ const WELCOME_MESSAGE = {
   content: CHAT_WELCOME_MESSAGE,
   isTicket: false,
 };
+
+// ── Daily session ID ─────────────────────────────────────────────────────
+// Generates a stable ID that is tied to the current calendar day.
+// A new ID is created automatically when the date changes.
+const DAILY_ID_KEY = "meato_chat_daily_id";
+
+function getDailyId() {
+  const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+  try {
+    const stored = JSON.parse(localStorage.getItem(DAILY_ID_KEY) || "null");
+    if (stored && stored.date === today) {
+      return stored.id;
+    }
+    // New day (or first visit) — generate a fresh ID
+    const id = Date.now().toString();
+    localStorage.setItem(DAILY_ID_KEY, JSON.stringify({ date: today, id }));
+    return id;
+  } catch {
+    return Date.now().toString();
+  }
+}
 
 export function ChatbotProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -62,7 +89,7 @@ export function ChatbotProvider({ children }) {
       const res = await fetch(CHAT_API_ROUTE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: content.trim() }),
+        body: JSON.stringify({ query: content.trim(), id: getDailyId() }),
       });
 
       const data = await res.json();
@@ -105,7 +132,15 @@ export function ChatbotProvider({ children }) {
 
   return (
     <ChatbotContext.Provider
-      value={{ isOpen, toggleChat, closeChat, messages, addMessage, clearChat, isLoading }}
+      value={{
+        isOpen,
+        toggleChat,
+        closeChat,
+        messages,
+        addMessage,
+        clearChat,
+        isLoading,
+      }}
     >
       {children}
     </ChatbotContext.Provider>
