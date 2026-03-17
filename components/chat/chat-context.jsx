@@ -21,7 +21,7 @@ const ChatbotContext = createContext(null);
 
 const WELCOME_MESSAGE = {
   id: "welcome",
-  role: "assistant",
+  role: "ai",
   content: CHAT_WELCOME_MESSAGE,
   isTicket: false,
 };
@@ -88,7 +88,7 @@ export function ChatbotProvider({ children }) {
 
     const userMessage = {
       id: Date.now().toString(),
-      role: "user",
+      role: "human",
       content: content.trim(),
       isTicket: false,
     };
@@ -113,7 +113,7 @@ export function ChatbotProvider({ children }) {
 
       const botMessage = {
         id: (Date.now() + 1).toString(),
-        role: "assistant",
+        role: "ai",
         // Show userNotification when a ticket is required, otherwise show the full answer
         content: isTicket ? data.userNotification : data.message,
         isTicket,
@@ -126,7 +126,7 @@ export function ChatbotProvider({ children }) {
         ...prev,
         {
           id: (Date.now() + 2).toString(),
-          role: "assistant",
+          role: "ai",
           content: CHAT_ERROR_MESSAGE,
           isTicket: false,
           isError: true,
