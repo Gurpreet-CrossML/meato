@@ -65,8 +65,14 @@ export async function POST(request) {
     if (!rawText || !rawText.trim()) {
       // n8n occasionally returns an empty body on webhook test runs;
       // treat it as an empty assistant message instead of a hard error.
-      console.warn("[chat/route] upstream returned an empty body — treating as empty reply");
-      return NextResponse.json({ message: "", isTicketRequired: false, userNotification: "" });
+      console.warn(
+        "[chat/route] upstream returned an empty body — treating as empty reply",
+      );
+      return NextResponse.json({
+        message: "",
+        isTicketRequired: false,
+        userNotification: "",
+      });
     }
 
     let data;
@@ -87,6 +93,10 @@ export async function POST(request) {
       message: result?.message ?? "",
       isTicketRequired: result?.isTicketRequired ?? false,
       userNotification: result?.userNotification ?? "",
+      id: result?.id,
+      session_id: result?.session_id,
+      role: result?.role,
+      created_at: result?.created_at,
     });
   } catch (err) {
     console.error("[chat/route] unexpected error:", err);
