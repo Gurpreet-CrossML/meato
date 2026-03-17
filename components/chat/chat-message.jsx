@@ -1,15 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-// import { Bot, User, TicketCheck, AlertCircle } from "lucide-react";
 
-/**
- * Renders a single chat bubble.
- * Supports:
- *  - isTicket  → amber "support ticket" styling
- *  - isError   → muted error styling
- *  - Markdown-style bullet lists (* or -) with basic bold (**text**)
- */
 export default function ChatMessage({ message }) {
   const isUser = message.role === "human";
   const isTicket = Boolean(message.isTicket);
@@ -25,32 +17,6 @@ export default function ChatMessage({ message }) {
       <div
         className={`flex max-w-[98%] gap-2 ${isUser ? "flex-row-reverse" : "flex-row"}`}
       >
-        {/* ── Avatar ── */}
-        {/* <div
-          className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
-            ${
-              isUser
-                ? "bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-300"
-                : isTicket
-                ? "bg-amber-500 text-white shadow-md"
-                : isError
-                ? "bg-rose-500/80 text-white shadow-md"
-                : "bg-gradient-to-br from-[#E86A33] to-[#c85a28] shadow-md text-white"
-            }
-          `}
-        >
-          {isUser ? (
-            <User size={14} />
-          ) : isTicket ? (
-            <TicketCheck size={16} />
-          ) : isError ? (
-            <AlertCircle size={16} />
-          ) : (
-            <Bot size={16} />
-          )}
-        </div> */}
-
-        {/* ── Bubble ── */}
         <div
           className={`px-4 py-3 text-sm leading-relaxed shadow-sm max-w-[98%]
             ${
@@ -76,8 +42,8 @@ export default function ChatMessage({ message }) {
   );
 }
 
-// ── Inline content renderer ───────────────────────────────────────────────────
-// Handles:  * bullet  /  - bullet  /  **bold**  /  *italic*  /  plain text
+// Inline content renderer
+// Handles:  * bullet  /  - bullet  /  **bold**  /  *italic*  /  [text](url)
 function MessageContent({ text }) {
   if (!text) return null;
 
@@ -109,7 +75,6 @@ function MessageContent({ text }) {
     } else {
       flushList();
       if (line.trim() === "") {
-        // blank line — add small spacer only if not the first element
         if (elements.length > 0) {
           elements.push(<div key={`sp-${idx}`} className="h-1" />);
         }
@@ -127,19 +92,39 @@ function MessageContent({ text }) {
   return <div className="space-y-0.5">{elements}</div>;
 }
 
-// Renders **bold** and *italic* inline
+// Renders **bold**, *italic*, and [text](url) inline
 function InlineText({ text }) {
-  // Split on **bold** and *italic* patterns
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+  // Match links first, then bold, then italic (order matters for nested cases)
+  const parts = text.split(/(\[[^\]]+\]\([^\)]+\)|\*\*[^*]+\*\*|\*[^*]+\*)/g);
+
   return (
     <>
       {parts.map((part, i) => {
+        // Markdown link: [text](url)
+        if (/^\[[^\]]+\]\([^\)]+\)$/.test(part)) {
+          const innerText = part.match(/\[([^\]]+)\]/)[1];
+          const url = part.match(/\(([^\)]+)\)/)[1];
+          return (
+            <a
+              key={i}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-600 dark:text-amber-600 underline hover:text-red-800 dark:hover:text-red-300"
+            >
+              <InlineText text={innerText} />
+            </a>
+          );
+        }
+        // Bold: **text**
         if (/^\*\*[^*]+\*\*$/.test(part)) {
           return <strong key={i}>{part.slice(2, -2)}</strong>;
         }
+        // Italic: *text*
         if (/^\*[^*]+\*$/.test(part)) {
           return <em key={i}>{part.slice(1, -1)}</em>;
         }
+        // Plain text
         return <span key={i}>{part}</span>;
       })}
     </>
