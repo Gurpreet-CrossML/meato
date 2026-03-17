@@ -1,11 +1,20 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { v4 as uuidv4 } from "uuid";
+
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import {
   CHAT_API_ROUTE,
   CHAT_STORAGE_KEY,
   CHAT_WELCOME_MESSAGE,
   CHAT_ERROR_MESSAGE,
+  CHAT_API_HISTORY_ROUTE,
 } from "@/constants";
 
 const ChatbotContext = createContext(null);
@@ -17,34 +26,63 @@ const WELCOME_MESSAGE = {
   isTicket: false,
 };
 
+// Permanent user ID
+// Generated once on first visit and stored in localStorage forever.
+// It only changes if the user manually clears their localStorage.
+const USER_ID_KEY = "meato_chat_user_id";
+
+function getUserId() {
+  try {
+    const stored = localStorage.getItem(USER_ID_KEY);
+    if (stored) {
+      return stored; // already exists — reuse it forever
+    }
+    // First visit — create a unique ID and persist it permanently
+    const id = uuidv4();
+    localStorage.setItem(USER_ID_KEY, id);
+    return id;
+  } catch {
+    // Fallback (e.g. private-browsing storage denied)
+    return uuidv4();
+  }
+}
+
 export function ChatbotProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
 
-  // ── Persist: load from localStorage on mount ──────────────────────────────
+  // Fetch chat history from DB on mount
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(CHAT_STORAGE_KEY);
-      if (saved) setMessages(JSON.parse(saved));
-    } catch (e) {
-      console.warn("Failed to load chat messages from localStorage", e);
-    }
-  }, []);
+    async function loadHistory() {
+      try {
+        const res = await fetch(
+          `${CHAT_API_HISTORY_ROUTE}?session_id=${getUserId()}`,
+        );
+        if (!res.ok) return;
 
-  // ── Persist: save whenever messages change ────────────────────────────────
-  useEffect(() => {
-    try {
-      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
-    } catch (e) {
-      console.warn("Failed to save chat messages to localStorage", e);
+        const data = await res.json();
+        if (data.success && data.history && data.history.length > 0) {
+          const apiMessages = data.history.map((row) => ({
+            id: row.id ? row.id.toString() : `${Date.now()}-${Math.random()}`,
+            role: row.role === "ai" ? "ai" : "human",
+            content: row.message,
+            isTicket: false,
+          }));
+
+          setMessages([WELCOME_MESSAGE, ...apiMessages]);
+        }
+      } catch (e) {
+        console.warn("Failed to load chat history from API", e);
+      }
     }
-  }, [messages]);
+    loadHistory();
+  }, []);
 
   const toggleChat = () => setIsOpen((prev) => !prev);
   const closeChat = () => setIsOpen(false);
 
-  // ── Send a user message and fetch an AI response ──────────────────────────
+  // Send a user message and fetch an AI response
   const addMessage = useCallback(async (content) => {
     if (!content?.trim()) return;
 
@@ -62,7 +100,7 @@ export function ChatbotProvider({ children }) {
       const res = await fetch(CHAT_API_ROUTE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: content.trim() }),
+        body: JSON.stringify({ query: content.trim(), id: getUserId() }),
       });
 
       const data = await res.json();
@@ -105,7 +143,15 @@ export function ChatbotProvider({ children }) {
 
   return (
     <ChatbotContext.Provider
-      value={{ isOpen, toggleChat, closeChat, messages, addMessage, clearChat, isLoading }}
+      value={{
+        isOpen,
+        toggleChat,
+        closeChat,
+        messages,
+        addMessage,
+        clearChat,
+        isLoading,
+      }}
     >
       {children}
     </ChatbotContext.Provider>

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bot, User, TicketCheck, AlertCircle } from "lucide-react";
+// import { Bot, User, TicketCheck, AlertCircle } from "lucide-react";
 
 /**
  * Renders a single chat bubble.
@@ -11,7 +11,7 @@ import { Bot, User, TicketCheck, AlertCircle } from "lucide-react";
  *  - Markdown-style bullet lists (* or -) with basic bold (**text**)
  */
 export default function ChatMessage({ message }) {
-  const isUser = message.role === "user";
+  const isUser = message.role === "human";
   const isTicket = Boolean(message.isTicket);
   const isError = Boolean(message.isError);
 
@@ -22,9 +22,11 @@ export default function ChatMessage({ message }) {
       transition={{ type: "spring", damping: 25, stiffness: 400 }}
       className={`flex w-full ${isUser ? "justify-end" : "justify-start"} mb-4`}
     >
-      <div className={`flex max-w-[85%] gap-2 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+      <div
+        className={`flex max-w-[98%] gap-2 ${isUser ? "flex-row-reverse" : "flex-row"}`}
+      >
         {/* ── Avatar ── */}
-        <div
+        {/* <div
           className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
             ${
               isUser
@@ -46,19 +48,19 @@ export default function ChatMessage({ message }) {
           ) : (
             <Bot size={16} />
           )}
-        </div>
+        </div> */}
 
         {/* ── Bubble ── */}
         <div
-          className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm
+          className={`px-4 py-3 text-sm leading-relaxed shadow-sm max-w-[98%]
             ${
               isUser
-                ? "bg-[#E86A33] dark:bg-[#FF7A3C] text-white rounded-tr-sm"
+                ? "bg-[#E86A33] dark:bg-[#FF7A3C] text-white rounded-2xl rounded-tr-sm"
                 : isTicket
-                ? "bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-600/50 text-amber-900 dark:text-amber-100 rounded-tl-sm"
-                : isError
-                ? "glass bg-rose-50/70 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-700/30 rounded-tl-sm text-foreground"
-                : "glass bg-white/70 dark:bg-white/10 border border-white/20 dark:border-white/5 rounded-tl-sm text-foreground"
+                  ? "bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-600/50 text-amber-900 dark:text-amber-100 rounded-2xl rounded-tl-sm"
+                  : isError
+                    ? "glass bg-rose-50/70 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-700/30 text-rose-900 dark:text-rose-100 rounded-2xl rounded-tl-sm"
+                    : "glass bg-amber-50 dark:bg-stone-800/80 border border-amber-100 dark:border-stone-700/50 text-stone-800 dark:text-stone-200 rounded-2xl rounded-tl-sm"
             }
           `}
         >
@@ -86,13 +88,16 @@ function MessageContent({ text }) {
   const flushList = () => {
     if (listItems.length === 0) return;
     elements.push(
-      <ul key={`list-${elements.length}`} className="list-disc list-inside space-y-1 my-1">
+      <ul
+        key={`list-${elements.length}`}
+        className="list-disc list-inside space-y-1 my-1"
+      >
         {listItems.map((item, i) => (
           <li key={i}>
             <InlineText text={item} />
           </li>
         ))}
-      </ul>
+      </ul>,
     );
     listItems = [];
   };
@@ -112,7 +117,7 @@ function MessageContent({ text }) {
         elements.push(
           <p key={idx}>
             <InlineText text={line} />
-          </p>
+          </p>,
         );
       }
     }
