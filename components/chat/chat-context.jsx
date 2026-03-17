@@ -1,5 +1,7 @@
 "use client";
 
+import { v4 as uuidv4 } from "uuid";
+
 import {
   createContext,
   useContext,
@@ -12,6 +14,7 @@ import {
   CHAT_STORAGE_KEY,
   CHAT_WELCOME_MESSAGE,
   CHAT_ERROR_MESSAGE,
+  CHAT_API_HISTORY_ROUTE,
 } from "@/constants";
 
 const ChatbotContext = createContext(null);
@@ -35,12 +38,12 @@ function getUserId() {
       return stored; // already exists — reuse it forever
     }
     // First visit — create a unique ID and persist it permanently
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const id = uuidv4();
     localStorage.setItem(USER_ID_KEY, id);
     return id;
   } catch {
     // Fallback (e.g. private-browsing storage denied)
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    return uuidv4();
   }
 }
 
@@ -49,24 +52,32 @@ export function ChatbotProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
 
-  // Persist: load from localStorage on mount
+  // Fetch chat history from DB on mount
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(CHAT_STORAGE_KEY);
-      if (saved) setMessages(JSON.parse(saved));
-    } catch (e) {
-      console.warn("Failed to load chat messages from localStorage", e);
-    }
-  }, []);
+    async function loadHistory() {
+      try {
+        const res = await fetch(
+          `${CHAT_API_HISTORY_ROUTE}?session_id=${getUserId()}`,
+        );
+        if (!res.ok) return;
 
-  // Persist: save whenever messages change
-  useEffect(() => {
-    try {
-      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
-    } catch (e) {
-      console.warn("Failed to save chat messages to localStorage", e);
+        const data = await res.json();
+        if (data.success && data.history && data.history.length > 0) {
+          const apiMessages = data.history.map((row) => ({
+            id: row.id ? row.id.toString() : `${Date.now()}-${Math.random()}`,
+            role: row.role === "ai" ? "ai" : "human",
+            content: row.message,
+            isTicket: false,
+          }));
+
+          setMessages([WELCOME_MESSAGE, ...apiMessages]);
+        }
+      } catch (e) {
+        console.warn("Failed to load chat history from API", e);
+      }
     }
-  }, [messages]);
+    loadHistory();
+  }, []);
 
   const toggleChat = () => setIsOpen((prev) => !prev);
   const closeChat = () => setIsOpen(false);

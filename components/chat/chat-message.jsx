@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
  *  - Markdown-style bullet lists (* or -) with basic bold (**text**)
  */
 export default function ChatMessage({ message }) {
-  const isUser = message.role === "user";
+  const isUser = message.role === "human";
   const isTicket = Boolean(message.isTicket);
   const isError = Boolean(message.isError);
 
@@ -52,15 +52,15 @@ export default function ChatMessage({ message }) {
 
         {/* ── Bubble ── */}
         <div
-          className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm max-w-[98%]
+          className={`px-4 py-3 text-sm leading-relaxed shadow-sm max-w-[98%]
             ${
               isUser
-                ? "bg-[#E86A33] dark:bg-[#FF7A3C] text-white rounded-tr-sm"
+                ? "bg-[#E86A33] dark:bg-[#FF7A3C] text-white rounded-2xl rounded-tr-sm"
                 : isTicket
-                  ? "bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-600/50 text-amber-900 dark:text-amber-100 rounded-tl-sm"
+                  ? "bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-600/50 text-amber-900 dark:text-amber-100 rounded-2xl rounded-tl-sm"
                   : isError
-                    ? "glass bg-rose-50/70 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-700/30 rounded-tl-sm text-foreground"
-                    : "glass bg-white/70 dark:bg-white/10 border border-white/20 dark:border-white/5 rounded-tl-sm text-foreground"
+                    ? "glass bg-rose-50/70 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-700/30 text-rose-900 dark:text-rose-100 rounded-2xl rounded-tl-sm"
+                    : "glass bg-amber-50 dark:bg-stone-800/80 border border-amber-100 dark:border-stone-700/50 text-stone-800 dark:text-stone-200 rounded-2xl rounded-tl-sm"
             }
           `}
         >

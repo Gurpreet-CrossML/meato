@@ -16,3 +16,5 @@ export const CHAT_WELCOME_MESSAGE =
 /** Fallback message shown when the n8n API is unreachable. */
 export const CHAT_ERROR_MESSAGE =
   "Sorry, I couldn't reach the server right now. Please try again in a moment.";
+
+export const CHAT_API_HISTORY_ROUTE = "/api/chat/history";

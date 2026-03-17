@@ -12,9 +12,9 @@ if (!globalForPg._pgPool) {
     user: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
     host: process.env.POSTGRES_HOST,
-    port: Number(process.env.POSTGRES_PORT ?? 5432),
+    port: Number(process.env.POSTGRES_PORT),
     database: process.env.POSTGRES_DB,
-    ssl: { rejectUnauthorized: false }, // required for NeonDB
+    ssl: { rejectUnauthorized: false },
     max: 5,
     idleTimeoutMillis: 30_000,
   });
@@ -33,17 +33,32 @@ const pool = globalForPg._pgPool;
  *   success: true,
  *   count: number,
  *   history: [
- *     { session_id, role, message }
+ *     { session_id, role, message, id, created_at }
  *   ]
  * }
  */
-export async function GET() {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const sessionId = searchParams.get("session_id");
+
+    if (!sessionId) {
+      return NextResponse.json(
+        { success: false, error: "Missing session_id" },
+        { status: 400 },
+      );
+    }
+
     const { rows } = await pool.query(
-      `SELECT session_id, role, message
-       FROM   chat_messages
-       ORDER  BY id DESC
-       LIMIT  20`,
+      `SELECT * FROM (
+         SELECT session_id, role, message, id, created_at
+         FROM   chat_messages
+         WHERE  session_id = $1
+         ORDER  BY created_at DESC
+         LIMIT  20
+       ) sub
+       ORDER  BY created_at ASC`,
+      [sessionId],
     );
 
     return NextResponse.json({
