@@ -23,24 +23,24 @@ const WELCOME_MESSAGE = {
   isTicket: false,
 };
 
-// ── Daily session ID ─────────────────────────────────────────────────────
-// Generates a stable ID that is tied to the current calendar day.
-// A new ID is created automatically when the date changes.
-const DAILY_ID_KEY = "meato_chat_daily_id";
+// Permanent user ID
+// Generated once on first visit and stored in localStorage forever.
+// It only changes if the user manually clears their localStorage.
+const USER_ID_KEY = "meato_chat_user_id";
 
-function getDailyId() {
-  const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+function getUserId() {
   try {
-    const stored = JSON.parse(localStorage.getItem(DAILY_ID_KEY) || "null");
-    if (stored && stored.date === today) {
-      return stored.id;
+    const stored = localStorage.getItem(USER_ID_KEY);
+    if (stored) {
+      return stored; // already exists — reuse it forever
     }
-    // New day (or first visit) — generate a fresh ID
-    const id = Date.now().toString();
-    localStorage.setItem(DAILY_ID_KEY, JSON.stringify({ date: today, id }));
+    // First visit — create a unique ID and persist it permanently
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(USER_ID_KEY, id);
     return id;
   } catch {
-    return Date.now().toString();
+    // Fallback (e.g. private-browsing storage denied)
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   }
 }
 
@@ -49,7 +49,7 @@ export function ChatbotProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
 
-  // ── Persist: load from localStorage on mount ──────────────────────────────
+  // Persist: load from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(CHAT_STORAGE_KEY);
@@ -59,7 +59,7 @@ export function ChatbotProvider({ children }) {
     }
   }, []);
 
-  // ── Persist: save whenever messages change ────────────────────────────────
+  // Persist: save whenever messages change
   useEffect(() => {
     try {
       localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
@@ -71,7 +71,7 @@ export function ChatbotProvider({ children }) {
   const toggleChat = () => setIsOpen((prev) => !prev);
   const closeChat = () => setIsOpen(false);
 
-  // ── Send a user message and fetch an AI response ──────────────────────────
+  // Send a user message and fetch an AI response
   const addMessage = useCallback(async (content) => {
     if (!content?.trim()) return;
 
@@ -89,7 +89,7 @@ export function ChatbotProvider({ children }) {
       const res = await fetch(CHAT_API_ROUTE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: content.trim(), id: getDailyId() }),
+        body: JSON.stringify({ query: content.trim(), id: getUserId() }),
       });
 
       const data = await res.json();

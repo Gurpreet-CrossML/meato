@@ -26,22 +26,22 @@ const pool = globalForPg._pgPool;
  * GET /api/chat/history
  *
  * Returns the 20 most-recent rows from `n8n_chat_histories`
- * in descending order (newest first).
+ * in descending order (newest first / last inserted row on top).
  *
  * Response shape:
  * {
  *   success: true,
  *   count: number,
  *   history: [
- *     { id, session_id, message, created_at, ... }
+ *     { session_id, role, message }
  *   ]
  * }
  */
 export async function GET() {
   try {
     const { rows } = await pool.query(
-      `SELECT *
-       FROM   n8n_chat_histories
+      `SELECT session_id, role, message
+       FROM   chat_messages
        ORDER  BY id DESC
        LIMIT  20`,
     );
