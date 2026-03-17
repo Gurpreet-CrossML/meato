@@ -110,7 +110,7 @@ function InlineText({ text }) {
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
+              className="text-red-600 dark:text-amber-600 underline hover:text-red-800 dark:hover:text-red-300"
             >
               <InlineText text={innerText} />
             </a>
