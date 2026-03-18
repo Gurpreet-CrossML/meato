@@ -34,7 +34,7 @@ export default function ChatWindow() {
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-black/20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#E86A33] to-[#c85a28] flex items-center justify-center text-white shadow-md">
+              <div className="w-10 h-10 rounded-full bg-linear-to-br from-[#E86A33] to-[#c85a28] flex items-center justify-center text-white shadow-md">
                 <Bot size={20} />
               </div>
               <div>
