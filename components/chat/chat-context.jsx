@@ -138,6 +138,11 @@ export function ChatbotProvider({ children }) {
   }, []);
 
   const clearChat = () => {
+    try {
+      localStorage.removeItem(USER_ID_KEY);
+    } catch (e) {
+      console.warn("Failed to remove user ID from localStorage", e);
+    }
     setMessages([WELCOME_MESSAGE]);
   };
 
