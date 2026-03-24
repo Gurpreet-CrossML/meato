@@ -51,7 +51,7 @@ export async function GET(request) {
 
     const { rows } = await pool.query(
       `SELECT * FROM (
-         SELECT session_id, role, message, id, created_at
+         SELECT session_id, role, message, id, created_at, is_liked
          FROM   chat_messages
          WHERE  session_id = $1
          ORDER  BY created_at DESC

@@ -18,3 +18,7 @@ export const CHAT_ERROR_MESSAGE =
   "Sorry, I couldn't reach the server right now. Please try again in a moment.";
 
 export const CHAT_API_HISTORY_ROUTE = "/api/chat/history";
+
+export const CHAT_API_LIKE_ROUTE = "/api/chat/like";
+
+export const CHAT_API_LEAVE_ROUTE = "/api/feedback/session";

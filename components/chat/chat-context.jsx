@@ -51,6 +51,8 @@ export function ChatbotProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackSessionId, setFeedbackSessionId] = useState(null);
 
   // Fetch chat history from DB on mount
   useEffect(() => {
@@ -68,6 +70,7 @@ export function ChatbotProvider({ children }) {
             role: row.role === "ai" ? "ai" : "human",
             content: row.message,
             isTicket: false,
+            is_liked: row.is_liked ?? null,
           }));
 
           setMessages([WELCOME_MESSAGE, ...apiMessages]);
@@ -112,14 +115,21 @@ export function ChatbotProvider({ children }) {
       const isTicket = Boolean(data.isTicketRequired);
 
       const botMessage = {
-        id: (Date.now() + 1).toString(),
+        id: data.id ? data.id.toString() : (Date.now() + 1).toString(),
         role: "ai",
         // Show userNotification when a ticket is required, otherwise show the full answer
         content: isTicket ? data.userNotification : data.message,
         isTicket,
+        is_liked: null,
       };
 
       setMessages((prev) => [...prev, botMessage]);
+
+      // Show feedback modal only when is_leaving is explicitly true
+      if (data.is_leaving === true) {
+        setFeedbackSessionId(data.session_id ?? null);
+        setShowFeedback(true);
+      }
     } catch (err) {
       console.error("[chatbot] error fetching response:", err);
       setMessages((prev) => [
@@ -144,6 +154,13 @@ export function ChatbotProvider({ children }) {
       console.warn("Failed to remove user ID from localStorage", e);
     }
     setMessages([WELCOME_MESSAGE]);
+    setShowFeedback(false);
+    setFeedbackSessionId(null);
+  };
+
+  const dismissFeedback = () => {
+    setShowFeedback(false);
+    setFeedbackSessionId(null);
   };
 
   return (
@@ -156,6 +173,9 @@ export function ChatbotProvider({ children }) {
         addMessage,
         clearChat,
         isLoading,
+        showFeedback,
+        feedbackSessionId,
+        dismissFeedback,
       }}
     >
       {children}

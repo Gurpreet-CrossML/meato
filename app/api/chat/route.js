@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import axios from "axios";
 
 /**
  * POST /api/chat
@@ -22,24 +23,37 @@ export async function POST(request) {
       );
     }
 
-    // Add a 30-second timeout so ETIMEDOUT is handled gracefully
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30_000);
-
-    let upstream;
+    let upstreamRes;
     try {
-      upstream = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query.trim(), id }),
+      upstreamRes = await axios.post(
+        webhookUrl,
+        { query: query.trim(), id },
+        {
+          headers: { "Content-Type": "application/json" },
+          timeout: 30000, // 30 seconds timeout
+        },
+      );
+    } catch (axiosErr) {
+      console.error(
+        "[chat/route] axios failed:",
+        axiosErr.message,
+        axiosErr.code,
+      );
 
-        signal: controller.signal,
-      });
-    } catch (fetchErr) {
-      clearTimeout(timeoutId);
+      // Axios handles HTTP errors (status >= 400) inside this catch block
+      if (axiosErr.response) {
+        console.error(
+          `[chat/route] upstream error ${axiosErr.response.status}:`,
+          axiosErr.response.data,
+        );
+        return NextResponse.json(
+          { error: "Upstream service error. Please try again." },
+          { status: 502 },
+        );
+      }
+
       const isTimeout =
-        fetchErr.name === "AbortError" || fetchErr?.cause?.code === "ETIMEDOUT";
-      console.error("[chat/route] fetch failed:", fetchErr);
+        axiosErr.code === "ECONNABORTED" || axiosErr.code === "ETIMEDOUT";
       return NextResponse.json(
         {
           error: isTimeout
@@ -49,20 +63,10 @@ export async function POST(request) {
         { status: 504 },
       );
     }
-    clearTimeout(timeoutId);
 
-    if (!upstream.ok) {
-      const text = await upstream.text();
-      console.error(`[chat/route] upstream error ${upstream.status}: ${text}`);
-      return NextResponse.json(
-        { error: "Upstream service error. Please try again." },
-        { status: 502 },
-      );
-    }
-
-    // Read as text first — n8n can return an empty body with HTTP 200
-    const rawText = await upstream.text();
-    if (!rawText || !rawText.trim()) {
+    // Read as text or object — axios automatically parses JSON if present
+    const rawData = upstreamRes.data;
+    if (!rawData || (typeof rawData === "string" && !rawData.trim())) {
       // n8n occasionally returns an empty body on webhook test runs;
       // treat it as an empty assistant message instead of a hard error.
       console.warn(
@@ -72,18 +76,23 @@ export async function POST(request) {
         message: "",
         isTicketRequired: false,
         userNotification: "",
+        is_leaving: "",
       });
     }
 
     let data;
-    try {
-      data = JSON.parse(rawText);
-    } catch (parseErr) {
-      console.error("[chat/route] failed to parse upstream JSON:", rawText);
-      return NextResponse.json(
-        { error: "The AI service returned an invalid response." },
-        { status: 502 },
-      );
+    if (typeof rawData === "string") {
+      try {
+        data = JSON.parse(rawData);
+      } catch (parseErr) {
+        console.error("[chat/route] failed to parse upstream JSON:", rawData);
+        return NextResponse.json(
+          { error: "The AI service returned an invalid response." },
+          { status: 502 },
+        );
+      }
+    } else {
+      data = rawData;
     }
 
     // n8n returns an array; take the first element
@@ -95,6 +104,7 @@ export async function POST(request) {
       userNotification: result?.userNotification ?? "",
       id: result?.id,
       session_id: result?.session_id,
+      is_leaving: result?.is_leaving,
       role: result?.role,
       created_at: result?.created_at,
     });

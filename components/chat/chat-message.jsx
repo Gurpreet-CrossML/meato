@@ -1,11 +1,35 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
+import axios from "axios";
+import { CHAT_API_LIKE_ROUTE } from "../../constants";
+import { useState } from "react";
 
 export default function ChatMessage({ message }) {
   const isUser = message.role === "human";
   const isTicket = Boolean(message.isTicket);
   const isError = Boolean(message.isError);
+
+  // Like/Dislike state
+  const [likedStatus, setLikedStatus] = useState(message.is_liked ?? null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleLike = async (liked) => {
+    if (likedStatus !== null || isUpdating) return;
+    setIsUpdating(true);
+    try {
+      await axios.patch(CHAT_API_LIKE_ROUTE, {
+        id: message.id,
+        is_liked: liked,
+      });
+      setLikedStatus(liked);
+    } catch (err) {
+      console.error("Failed to save like status", err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <motion.div
@@ -36,6 +60,49 @@ export default function ChatMessage({ message }) {
             </p>
           )}
           <MessageContent text={message.content} />
+
+          {!isUser && message.id && message.id !== "welcome" && !isError && (
+            <div className="flex gap-2 mt-2 pt-2 border-t border-amber-200/50 dark:border-stone-700/50">
+              <button
+                onClick={() => handleLike(true)}
+                disabled={likedStatus !== null || isUpdating}
+                className={`p-1 rounded transition-colors ${
+                  likedStatus === true
+                    ? "text-[#E86A33] dark:text-[#FF7A3C]"
+                    : "text-stone-500 hover:text-[#E86A33] hover:bg-stone-200 dark:hover:bg-stone-800"
+                } ${likedStatus !== null && likedStatus !== true ? "hidden" : ""}`}
+                aria-label="Like response"
+              >
+                <ThumbsUp
+                  size={16}
+                  className={
+                    likedStatus === true
+                      ? "fill-current outline-none"
+                      : "outline-none"
+                  }
+                />
+              </button>
+              <button
+                onClick={() => handleLike(false)}
+                disabled={likedStatus !== null || isUpdating}
+                className={`p-1 rounded transition-colors ${
+                  likedStatus === false
+                    ? "text-[#E86A33] dark:text-[#FF7A3C]"
+                    : "text-stone-500 hover:text-[#E86A33] hover:bg-stone-200 dark:hover:bg-stone-800"
+                } ${likedStatus !== null && likedStatus !== false ? "hidden" : ""}`}
+                aria-label="Dislike response"
+              >
+                <ThumbsDown
+                  size={16}
+                  className={
+                    likedStatus === false
+                      ? "fill-current outline-none"
+                      : "outline-none"
+                  }
+                />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>

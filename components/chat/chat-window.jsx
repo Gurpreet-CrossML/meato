@@ -6,9 +6,18 @@ import { X, Trash2, Bot } from "lucide-react";
 import { useChatbot } from "./chat-context";
 import ChatMessage from "./chat-message";
 import ChatInput from "./chat-input";
+import FeedbackModal from "./feedback-modal";
 
 export default function ChatWindow() {
-  const { isOpen, closeChat, messages, clearChat } = useChatbot();
+  const {
+    isOpen,
+    closeChat,
+    messages,
+    clearChat,
+    showFeedback,
+    feedbackSessionId,
+    dismissFeedback,
+  } = useChatbot();
   const bottomRef = useRef(null);
 
   // Auto-scroll to bottom when messages change
@@ -73,6 +82,14 @@ export default function ChatWindow() {
             ))}
             <div ref={bottomRef} className="h-1" />
           </div>
+
+          {/* Feedback Modal */}
+          {showFeedback && (
+            <FeedbackModal
+              sessionId={feedbackSessionId}
+              onDismiss={dismissFeedback}
+            />
+          )}
 
           {/* Input Area */}
           <ChatInput />
