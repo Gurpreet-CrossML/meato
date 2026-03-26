@@ -25,7 +25,7 @@ export async function POST(request) {
 
     const backendUrl =
       process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-    const apiUrl = `${backendUrl}/api/feedback/session`;
+    const apiUrl = `${backendUrl}/feedback/session`;
 
     const upstream = await fetch(apiUrl, {
       method: "POST",
